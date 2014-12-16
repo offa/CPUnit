@@ -1,6 +1,6 @@
 
 CC = g++
-CFLAGS = -g -c -W -Wall -pedantic -O0 -I./src # -D GLOB_DEBUG #  -D DEBUG_LOG
+CFLAGS = -g -c -W -Wall -Wextra -pedantic -O0 -I./src # -D GLOB_DEBUG #  -D DEBUG_LOG
 COMPILE = $(CC) $(CFLAGS) 
 
 DEPFILE = .dependencies
