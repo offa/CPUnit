@@ -1,2 +1,4 @@
 lib/*.a
 *.o
+
+test/tester
