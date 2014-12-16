@@ -18,7 +18,7 @@ cpunit::TestRunnerFactory::TestRunnerFactory(const TestRunnerFactory& o) :
 cpunit::TestRunnerFactory::~TestRunnerFactory()
 {}
 
-cpunit::TestRunnerFactory::TestRunnerFactory& 
+cpunit::TestRunnerFactory& 
 cpunit::TestRunnerFactory::operator=(const TestRunnerFactory& o) {
   robust  = o.robust;
   maxTime = o.maxTime;
