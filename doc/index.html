@@ -1,0 +1,563 @@
+<html>
+  <body>
+    <h1>CPUnit project page</h1>
+    <p>
+    <a name="What is CPUnit?"/>
+    <h2>What is CPUnit?</h2>
+    <p>
+      CPUnit is a unit test framework for C++ applications and programs. It is very much inspired by
+      the elegance of JUnit, althoug, since C++ is a language quite different from Java, both the implementation
+      and the way tests are written differ. (For instance, tests in CPUnit are never encapsulated in a class,
+      but rather a namespace). The similarity is in the ease of use, the minimality of coding required to 
+      write good tests and user friendly command line options for test execution.
+    </p>
+    <P>
+      <h3>Contents:</h3>
+      <ol>
+	<li><a href="http://sourceforge.net/projects/cpunit/">Download CPUnit (redirects to the CPUnit project site)</a></li>
+	<li><a href="#What is CPUnit?">What is CPUnit?</a></li>
+	<li><a href="#Motivation and main features">Motivation and main features</a></li>
+	<li><a href="#A mininal example">A mininal example</a></li>
+	<li><a href="#Introducing suites">Introducing suites</a></li>
+	<li><a href="#Using fixtures">Using fixtures</a></li>
+	<li><a href="#Testing for expected exceptions">Testing for expected exceptions</a></li> 
+	<li><a href="#Modes of execution">Modes of execution</a></li>
+	<li><a href="#Linking sub-projects together">Linking sub-projects together</a></li>
+	<li><a href="#Using with Doxygen">Using with Doxygen</a></li>
+	<li><a href="#Available asserts">Available asserts</a></li>
+	<li><a href="#Handling custom exceptions">Handling custom exceptions</a></li>
+	<li><a href="#Tricks for more compact code">Tricks for more compact code</a></li>
+	<li><a href="doxygen/html/index.html">Doxygen documentation</a></li>
+      </ol>
+    </p>
+    </P>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Motivation and main features"/>
+    <h2>Motivation and main features</h2>
+    <p>
+      I was looking for a good xUnit-based test framework for my C++ code, and after ten years
+      of Java programming, I have been quite spoiled using JUnit. After having browsed the web
+      for some time, I realized two things:
+      <ol>
+        <li>Due to the lack of flexibility in C++ compared to Java, you cannot "have it all" (as you can in JUnit).</li>
+        <li>None of the frameworks I looked at (and I shall not claim to have looked at all of them)
+          satisfied my primary list of requirements.</li>
+      </ol>
+      So I wrote my own. And afterwards, since I am a humble man, I found it to be so good I wanted to share it with
+      someone else.
+      <h3>Main features</h3>
+      The main requirements I had when I set out are listed below in prioritized order.
+      <ol>
+        <li>Minimal amount of code required to write a test</li>
+        <li>Automatic test registration</li>
+        <li>Support for suites/grouping of tests</li>
+        <li>Support for fixtures</li>
+        <li>Scalable to large projects with many modules</li>
+        <li>Possibility to run subsets of the tests using wildcards</li>
+      </ol>
+      <h3>Limitations</h3>
+      The test framework is a C++ unit test framework, and is thus made to work with C++ compilers.
+      It makes use of the following "exotic" mechanisms:
+      <ul>
+        <li>Exceptions</li>
+        <li>STL</li>
+        <li>Templates</li>
+        <li>Streams</li>
+      </ul>
+      Also, since there are no "good" time functions in ANSI C++, the default timing of the tests
+      has second resolution.
+      However, if your platform complies with the POSIX standard, the code is supposed to pick
+      this up, and times will be presented with up to millisecond resolution.
+      (If it does not, and you have a POSIX compliant platform, pass 
+      <tt><font size=+1>-D _POSIX_TIMERS</font></tt> to the build script.)
+      Currently (version 0.6), there is no special usage of Windows time APIs when on Windows, 
+      but this will follow soon.
+      If you want to make an adaptation to the platform of you choice, the key is to modify
+      the StopWatch class. Have a look in "src/cpunit_StopWatch.cpp", and I am pretty sure
+      you will have it your way in a matter of minutes.
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="A mininal example"/>
+    <h2>A mininal example</h2>
+    <p>
+      The below code snippet demonstrates the least amount of code required to 
+      write an executable test in CPUnit:
+      <pre>
+        #include &lt;cpunit&gt;
+        
+        using namespace cpunit;
+
+        CPUNIT_GTEST(example_test) {
+           const int expected = 33;
+           const int actual   = i1;
+           assert_equals("The two integers should be equal.", expected, actual);
+        }
+      </pre>
+      (The <tt>using namespace cpunit;</tt> directive is to avoid having to prefix
+      all the <tt>assert_*</tt> functions by their namespace <tt>cpunit::</tt>).<br/>
+      Let the snippet be located in a file named "TestDemo.cpp", and for the sake of this
+      example, we assume the following:
+      <ul>
+        <li>The CPUnit header files are located at "/include"</li>
+        <li>The CPUnit library is located at "/lib"</li>
+        <li>The CPUnit library is named "CPUnit"</li>
+      </ul>
+      In a prompt, you now have to type
+      <pre>
+        &gt;g++ -I/include -L/lib -lCPUnit -o testExecutable TestDemo.cpp 
+        &gt;./testExecutable
+      </pre>
+      and the output will show up as:
+      <pre>
+        &gt;g++ -I/include -L/lib -lCPUnit -o testExecutable TestDemo.cpp 
+        &gt;./testExecutable
+        .
+        
+	Time: 0.010
+
+        OK (1 tests)
+        &gt;
+      </pre>
+      You can download the code for this example here: <a href="./TestDemo.cpp">TestDemo.cpp</a>
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Introducing suites"/>
+    <h2>Introducing suites</h2>
+    <p>
+      If you want to write more than just a few tests, it is handy to group the tests into suites.
+      In CPUnit, suites are equivalent to namespaces of tests, and modifying the above example into using
+      suites turns out as follows:
+      <pre>
+        #include &lt;cpunit&gt;
+        
+        namespace DemoTest {
+
+           using namespace cpunit;
+
+           CPUNIT_TEST(DemoTest, example_test) {
+              const int i1 = 33;
+              const int i2 = i1;
+              assert_equals("The two integers should be equal.", i1, i2);
+           }
+
+           CPUNIT_TEST(DemoTest, example_test_two) {
+              const int i1 = 33;
+              const int i2 = 34;
+              assert_true("The two integers should be different.", i1 != i2);
+           }
+        }
+      </pre>
+      Notice that, when inside a suite, we use a slightly different macro for the tests.
+      In particular, the suite (namespace) name is a parameter to the macro.<br/>
+      Although you can name your suites almost anything, it is advisable to use names reflecting what the
+      suite aims at testing. Compiling and running is as before:
+      <pre>
+        &gt;g++ -I/include -L/lib -lCPUnit -o testExecutable TestDemo.cpp 
+        &gt;./testExecutable
+        ..
+        
+	Time: 0.018
+
+        OK (2 tests)
+        &gt; 
+      </pre>
+      You can download the code for this example here: <a href="./DemoTest.cpp">DemoTest.cpp</a>
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Using fixtures"/>
+    <h2>Using fixtures</h2>
+    <p>
+      It is not uncommon that several tests in one suite operate on the same type of test data.
+      To reduce the amount of code in the tests, this common code can be placed directly in the suite (namespace).
+      In the following example, we shall write a test to verify that <tt>std::sort</tt> works for integers:
+      <pre>
+        #include &lt;cpunit&gt;
+        #include &lt;algorithm&gt;
+        #include &lt;vector&gt;
+        
+        namespace SortTest {
+        
+           using namespace cpunit;
+
+           const int length = 3;
+           const int data[length] = {3, 1, 2};
+           std::vector<int> input(data, data+length);
+
+           CPUNIT_TEST(SortTest, test_sort) {
+              // Construct the expected result
+              const int expected_data[length] = {1, 2, 3};
+              std::vector<int> expected(expected_data, expected_data + length);
+
+              // Sort and then test the actual result
+              std::sort(input.begin(), input.end());
+              assert_equals("std::sort failed.", expected, input);
+           }
+	   
+           // Construct a reverse comparator for the next test.
+           struct RevCmp {
+              bool operator () (int i1, int i2) {
+                 return i2 < i1;
+              }
+           };
+
+           CPUNIT_TEST(SortTest, test_reverse_sort) {
+           // Construct the expected result
+           const int expected_data[length] = {2, 3, 1};
+           std::vector<int> expected(expected_data, expected_data + length);
+
+           // Sort and then test the actual result
+           std::sort(input.begin(), input.end(), RevCmp());
+           assert_equals("std::sort reversely failed.", expected, input);
+        }
+     }
+   </pre>
+      If we are lucky, this will work out all right. There is a problem, however. The tests modify common
+      input data, and in a worse setting, this might cause different results if tests are executed in different
+      orders. (In CPUnit, there is no guarantee with respect to the order of execution of tests).<br/>
+      The solution is to use fixtures. Fixtures consist of a set of data together with two functions, a 
+      <tt>set-up</tt> function and a <tt>tear-down</tt> function, which are run before and after each test,
+      respectively. In CPUnit, there can be one fixture for each suite:
+      <pre>
+        #include &lt;cpunit&gt;
+        #include &lt;algorithm&gt;
+        #include &lt;vector&gt;
+        
+        namespace SortTest {
+        
+           using namespace cpunit;
+
+           const int length = 3;
+           const int data[length] = {3, 1, 2};
+           std::vector<int> input;
+          
+           CPUNIT_SET_UP(SortTest) {
+              input = std::vector<int>(data, data + length);
+           }
+
+           CPUNIT_TEAR_DOWN(SortTest) {
+              input.clear();
+           }
+
+           CPUNIT_TEST(SortTest, test_sort) {
+           // Construct the expected result
+           const int expected_data[length] = {1, 2, 3};
+           std::vector<int> expected(expected_data, expected_data + length);
+
+           // Sort and then test the actual result
+           std::sort(input.begin(), input.end());
+              assert_equals("std::sort failed.", expected, input);
+           }
+	   
+           // Construct a reverse comparator for the next test.
+           struct RevCmp {
+              bool operator () (int i1, int i2) {
+                 return i2 < i1;
+              }
+           };
+
+           CPUNIT_TEST(SortTest, test_reverse_sort) {
+           // Construct the expected result
+           const int expected_data[length] = {2, 3, 1};
+           std::vector<int> expected(expected_data, expected_data + length);
+
+           // Sort and then test the actual result
+           std::sort(input.begin(), input.end(), RevCmp());
+           assert_equals("std::sort reversely failed.", expected, input);
+        }
+     }
+     </pre>
+      Now, each test is guaranteed to execute on the same data each time, regardless of which tests have executed before.
+      I admit that, the <tt>tear-down</tt> function is not required in this concrete case, but I included it for the sake of the example.
+      You will usually just need a tear down function if you have allocated data on the heap, or if your tests
+      modify global data (possibly used by tests in other suites) having to be re-set.
+      <p>
+	You can download the code for this example here: <a href="./SortTest.cpp">SortTest.cpp</a>
+      </p>
+      <p>
+	Now, compile and run it all together:
+	<pre>
+        &gt;g++ -I/include -L/lib -lCPUnit -o testExecutable *.cpp 
+        &gt;./testExecutable
+	</pre>
+      </p>
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Testing for expected exceptions"/>
+    <h2>Testing for expected exceptions</h2>
+    <p>
+      Sometimes, you want to check that your code really does throw an exception. You can register this type of tests
+      using the <tt>CPUNIT_TEST_EX</tt> and <tt>CPUNIT_TEST_EX_ANY</tt> macros:
+      <pre>
+      CPUNIT_TEST_EX_ANY(MyStuffTest, test_that_that_exception_really_comes) {
+        throw "The '*_ANY' macro registers a test that succeeds whatever is thrown";
+      }
+
+      CPUNIT_TEST_EX(MyStuffTest, test_for_particular_exception, MyException) {
+        // This macro registers a test that succeeds only if a test of
+        // the type 'MyException' is thrown.
+      }
+      </pre>
+      Beware, however, that the <tt>cpunit::AssertionException</tt> is given special treatment:
+      If the test code throws a <tt>cpunit::AssertionException</tt>, this exception is re-thrown,
+      and the test still fails.
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Modes of execution"/>
+    <h2>Modes of execution</h2>
+    <h3>Running a subset of the tests</h3>
+    If you have a lot of tests and you only want to run a few, you can use wildcards as follows:
+    <pre>
+      &gt;./testExecutable "SortTest*"
+    </pre>
+    This will cause all tests which fully quallified name (namespace and all) starting with "SortTest"
+    to be executed. You can use many wildcards if you like:
+    <pre>
+      &gt;./testExecutable "SortTest*test*"
+    </pre>
+    Or just list the tests you want to run:
+    <pre>
+      &gt;./testExecutable SortTest::test_reverse_sort SortTest::test_sort
+    </pre>
+    Listing tests has the advantage of enforcing the order of execution. 
+    When specifying e.g. "SortTest*", all tests matching the pattern will be executed, but there is no
+    guarantee to the order of execution within the set of tests. However, specifying several specifications
+    will cause each set of tests to be executed in the specified order, so in the last example above, "SortTest::test_reverse_sort" will
+    be executed first, followed by "SortTest::test_sort".
+    <p>
+      If you want to know which tests exists, run
+      <pre>
+	&gt;./testExecutable -L
+      </pre>
+      This will list all the registered tests in alphabetical order. Passing one or more glob-patterns in addition to <tt>-L</tt> will list all
+      tests matching the glob-patterns.
+    </p>
+    <h3>Verbose and robust mode</h3>
+    <p>
+    By specifying the flag <tt>-v</tt> (or <tt>--verbose</tt>) to the test executable, you will have one line printed for each test being executed.<br/>
+    Specifying the flag <tt>-a</tt> (or <tt>--all</tt>) will force all tests to be executed, even if there are errors. (Default behaviour is to
+    stop at the first error).
+    <h3>Error message formatting</h3>
+    If you are unhappy with the way errors are reported, you have some flexibility in choosing the formatting.<br/>
+    The format is specified as <tt>-f=&lt;format&gt;</tt> in a <tt>printf</tt>-like manner, and the following formatting options are available:
+    <ul>
+      <li>p - test suite name</li>
+      <li>n - test name</li>
+      <li>t - test time</li>
+      <li>e - test outcome</li>
+      <li>m - error message</li>
+      <li>f - file name where test resides</li>
+      <li>l - line number in the file where the test resides</li>
+      <li>N - newline</li>
+      <li>T - tab</li>
+    </ul>
+    The default setup is <tt>"%p::%n - %m (%t)%N(Registered at %f:%l)"</tt>, and an example error message then looks like this:
+    <pre>
+      SortTest::test_reverse_sort - ASSERT EQUALS FAILED - std::sort reversely failed. Expected &lt;[2,3,1]&gt;, was &lt;[3,2,1]&gt;. (0.020s)
+      (Registered at SortTest.cpp:31)
+    </pre>
+    (The alert reader undoubtedly noticed the erroneous test data in the above example).<br/>
+    Notice that, specifying a new error report format with <tt>-f</tt> will only take effect in robust mode (<tt>--all</tt>).
+    </p>
+    <h3>More execution options</h3>
+    Specifying "-h" or "--help" on the command line displays all command line options.
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Linking sub-projects together"/>
+    <h2>Linking sub-projects together</h2>
+    <p>
+      This can be achieved through several means. The below procedure is my way of accomplishing this,
+      and makes use of static linking:
+      <ol>
+	<li>
+	  Compile each subproject into an archive as follows:
+	  <pre>
+	    &gt; g++ -c -I/include *.cpp
+	    &gt; ar -rcs libTests.a *.o
+	    &gt;
+	  </pre>
+	</li>
+	<li>
+	  Link everything together into one large executable:
+	  <pre>
+	    &gt; g++ -o allTests -L/lib -lCPUnit -Wl,-all_load ./sub_proj_1/libTests.a ... ./sub_proj_n/libTests.a
+	    &gt;
+	  </pre>
+	  The option <tt>-Wl,-all_load</tt> tells the linker to load all object files from all static libraries. 
+	  (Default behaviour is to only load object files that are explicitly referenced, which will fail with CPUnit, since
+	  the object files contain self registering mechanisms with no external references).
+	</li>
+      </ol>
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Using with Doxygen"/>
+    <h2>Using with Doxygen</h2>
+    <p>
+      To make sure Doxygen expands the <tt>CPUNIT_XXX</tt> macros in order to produce proper documentation
+      of your tests, add the following setup in the Doxygen configuration (under preprocessor configuration):
+      <pre>
+	ENABLE_PREPROCESSING = YES
+	MACRO_EXPANSION      = YES
+	PREDEFINED           = "CPUNIT_TEST(n,f)='void f()" \
+	                       "CPUNIT_GTEST(f)='void f()" \
+                               "CPUNIT_SET_UP(f)='void set_up()" \
+                               "CPUNIT_TEAR_DOWN(n)='void tear_down()"\
+                               "CPUNIT_TEST_EX(n,f,E)='void f()"\
+                               "CPUNIT_TEST_EX_ANY(n,f)='void f()"\
+                               "CPUNIT_GTEST_EX(f,E)='void f()"\
+                               "CPUNIT_GTEST_EX_ANY(f)='void f()"
+      </pre>
+      (I admit it looks strange with the unmatched ', but this is what produces correct output on Doxygen 1.7.4).
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+    <a name="Available asserts"/>
+    <h2>Available asserts</h2>
+    <p>
+      All assert functions are declared in "cpunit_Assert.hpp":
+      <pre>        
+       template&lt;class T&gt;
+       void assert_equals(const std::string msg, const T &expected, const T &actual);
+       
+       template&lt;class T&gt;
+       void assert_equals(const T &expected, const T &actual);
+
+       template&lt;class T, class Eq&gt;
+       void assert_equals(const std::string msg, const T &expected, const T &actual, const Eq &eq);
+
+       template&lt;class T, class Eq&gt;
+       void assert_equals(const T &expected, const T &actual, const Eq &eq);
+  
+       void assert_equals(const std::string msg, const double expected, const double actual, const double error);
+       void assert_equals(const double expected, const double actual, const double error);
+  
+       void assert_true(const std::string msg, const bool statement);
+       void assert_true(const bool statement);
+
+       void assert_false(const std::string msg, const bool statement);
+       void assert_false(const bool statement);
+
+       void assert_not_null(const std::string msg, const void *data);
+       void assert_not_null(const void *data);
+
+       void assert_null(const std::string msg, const void *data);
+       void assert_null(const void *data);
+       
+       void fail(const std::string msg);
+       void fail();
+      </pre>
+      Notice in particular the third and fourth assert functions, taking a separate
+      template based, argument <tt>Eq</tt>. This must be a function object on the form
+      <pre>
+	struct MyEq {
+	   bool operator()(const T &t1, const T &t2) const {
+	      // do your comparision here...
+	   }
+	};
+      </pre>
+      and is the way to perform equality checking on complex objects where <tt>==</tt>
+      is not sufficient.
+    </p>
+    <a name="Assert macros"/>
+    <h3>Assert macros</h3>
+    <p>
+      In addition to the above assert functions, there are also some simple assert macros available:
+      <pre>
+	CPUNIT_FAIL     ()
+	CPUNIT_FAIL1    ( message )
+	CPUNIT_ASSERT   ( predicate )
+	CPUNIT_ASSERT1  ( message, predicate )
+	CPUNIT_DISPROVE ( predicate )
+	CPUNIT_DISPROVE1( message, predicate )
+      </pre>
+      The <tt>*_ASSERT</tt> macros check that the predicate is <tt>true</tt>, and the <tt>*_DISPROVE</tt>
+      macros check that the predicate is <tt>false</tt>. The predicate code (when there is one) and the line number of the statement
+      will be part of the final error message, so there is less need for a comment when using these macroes. However,
+      all macros have a sibling supporting a message, which can be stream-formatted, such as
+      <pre>
+	for (int i=0; i<100; ++i) {
+          CPUNIT_ASSERT1("Failed for i=" << i, i < 100);
+        }
+      </pre>
+    </p>
+    <a name="Handling custom exceptions"/>
+    <h2>Handling custom exceptions</h2>
+    <p>
+      Off the shelf, CPUnit only handles its own exceptions and subclasses of <tt>std::exception</tt>
+      when running in robust mode (in addition to a <tt>catch(...)</tt> clause). 
+      To add explicit handling of other types of thrown objects, do as follows:
+      <ol>
+	<li>Implement a subclass of 
+	  <a href="./doxygen/html/classcpunit_1_1_test_runner_decorator.html"><tt>cpunit::TestRunnerDecorator</tt></a> 
+	  for handling your own exceptions, using 
+	  <a href="doxygen/html/classcpunit_1_1_run_all_test_runner.html"><tt>cpunit::RunAllTestRunner</tt></a> 
+	  as an example.</li>
+	<li>Register the class in the <tt>get_test_runner</tt> method in the 
+	<a href="doxygen/html/classcpunit_1_1_test_execution_facade.html"><tt>cpunit::TestExecutionFacade</tt></a>,
+	as indicated by the comments. (You can browse to the code from the doxygen documentation).</li>
+      </ol>
+    </p>
+    <a name="Tricks for more compact code"/>
+    <h2>Tricks for more compact code</h2>
+    <p>
+      This section lists some more or less hidden features that will help you spend less
+      symbols when defining your tests.
+      <h3>String concatenation</h3>
+      <p>
+	To steer away from the macro pitfall, (and since I do not like to program 
+	everything in upper case), I decided to define all asserts as functions.
+	The downside is that producing assert comments (the first argument for the assert
+	functions taking strings) containing variable information is cumbersome.
+	To alleviate this, I added a macro, <tt>CPUNIT_STR</tt>, which allows you
+	to write assert comments like this:
+	<pre>
+       CPUNIT_GTEST(test_stuff) {
+	  for (int i=0; i<30; ++i) {
+             assert_true(CPUNIT_STR("Statement " &lt;&lt; i &lt;&lt; " is not valid."), is_valid(i));
+          }
+       }
+	</pre>
+        Of course, you may redefine this to something shorter in your test if you like.
+      </p>
+      <h3>Macros for scope names</h3>
+      If you have deep name space structures, writing headers like
+      <pre>
+     CPUNIT_TEST(Level1::Level2::Level3::Level4::Level5::GadgetTest, test_stuff) {
+        ...
+     }
+      </pre>
+      many times in a file is annoying, time consuming and impossible to read, all
+      at the same time. You may, however,
+      replace the scope name (and test name for that matter) by a macro:
+      <pre>
+#define GADGET_TEST Level1::Level2::Level3::Level4::Level5::GadgetTest
+
+     CPUNIT_TEST(GADGET_TEST, test_stuff) {
+        ...
+     }
+      </pre>
+    </p>
+    <p>
+      Good luck!</br>
+      -db-
+    </p>
+    <p>
+      <a href="http://sourceforge.net/projects/cpunit/">CPUnit project site</a>
+    </p>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if test "$#" -ne "1"; then
+    echo "Usage: >./sync_doc <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+rsync -aiv * ${USERNAME},cpunit@web.sourceforge.net:/home/project-web/cpunit/htdocs/

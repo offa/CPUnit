@@ -1,0 +1,14 @@
+#!/bin/sh
+
+TMP_FILE='___tmp_file'
+
+cat $1 $2 > $TMP_FILE
+if test "$?" -ne "0"; then
+    echo Error.
+    exit 1
+fi
+
+mv $TMP_FILE $2
+
+exit $?
+

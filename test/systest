@@ -1,0 +1,234 @@
+#!/bin/bash
+
+#    Copyright (c) 2011-2012 Daniel Bakkelund.
+#    All rights reserved.
+#
+#    Redistribution and use in source and binary forms, with or without
+#    modification, are permitted provided that the following conditions
+#    are met:
+#     1. Redistributions of source code must retain the above copyright
+#        notice, this list of conditions and the following disclaimer.
+#     2. Redistributions in binary form must reproduce the above copyright
+#        notice, this list of conditions and the following disclaimer in the
+#        documentation and/or other materials provided with the distribution.
+#     3. Neither the name of the copyright holders nor the names of its
+#        contributors may be used to endorse or promote products derived from
+#        this software without specific prior written permission.
+#
+#    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+#    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+#    THE POSSIBILITY OF SUCH DAMAGE.
+
+if test "$#" -eq "0"; then
+    echo No version information is supplied.
+    exit 1
+fi
+
+VERSION=$1
+BINARY='./tester'
+
+echo Running CPUnit system tests for version $VERSION
+
+NUM_TESTS="0"
+NUM_FAILING_TESTS="0"
+
+exit_failing() {
+    echo "FAILED!!!!!!"
+    exit 1
+}
+
+
+count_all_tests() {
+    FILES=`find . -name '*.cpp' | xargs`
+    NUM_TESTS=`cat *.cpp | grep -cP 'CPUNIT_G?TEST(_EX)?'`
+}
+
+count_failing_tests() {
+    FILES=`find . -name '' | xargs`
+    NUM_FAILING_TESTS=`cat *.cpp | grep -c '@will_fail'`
+}
+
+count_working_tests() {
+    count_failing_tests
+    NUM_TESTS=`cat *.cpp | grep -cP 'CPUNIT_G?TEST(_EX)?'`
+    let NUM_TEST="NUM_TESTS -= $NUM_FAILING_TESTS"
+}
+
+verify_execution() {
+    if test "$?" -ne "0"; then
+	echo FAILED!!!!!
+	exit_failing
+    fi
+}
+
+#
+# PRINT SOME STATISTICS
+#
+count_all_tests
+echo "Total number of tests  : $NUM_TESTS"
+count_working_tests
+echo "Number of working tests: $NUM_TESTS"
+count_failing_tests
+echo "Number of failing tests: $NUM_FAILING_TESTS"
+echo
+
+#
+# TESTS THAT REQUIRE TESTS THAT FAIL GO ON TOP
+#
+echo
+echo "Building with tests that fail."
+./build_tests -D SHOW_ERRORS
+
+echo
+echo Testing "'--list'" and "'-L'"
+count_all_tests
+EXPECTED_MESSAGE="$NUM_TESTS tests in total."
+echo Looking for output:
+echo $EXPECTED_MESSAGE
+verify_execution
+if test `$BINARY -L | grep -c "$EXPECTED_MESSAGE"` -ne "1"; then
+    echo "$BINARY -L" failed. 
+    exit_failing
+fi
+if test `$BINARY --list | grep -c "$EXPECTED_MESSAGE"` -ne "1"; then
+    echo "$BINARY -l" failed.
+    exit_failing
+fi
+$BINARY --list > /dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo "Exit value from $BINARY --list was not 0".
+    exit_failing
+fi
+echo OK.
+
+
+echo
+echo Testing "'-av'" and "'--all --verbose'"
+NUM_EXECUTED=`$BINARY -av | grep -cP '^Running.*(\.|F|E)'`
+echo "Executed $NUM_EXECUTED tests"
+if test "$NUM_EXECUTED" -ne "$NUM_TESTS"; then
+    echo "$BINARY -av failed."
+    echo "Expected $NUM_TESTS tests, was $NUM_EXECUTED"
+    exit_failing
+fi
+NUM_EXECUTED=`$BINARY --all --verbose | grep -cP '^Running.*(\.|F|E)'`
+echo "Executed $NUM_EXECUTED tests"
+if test "$NUM_EXECUTED" -ne "$NUM_TESTS"; then
+    echo "$BINARY --all --verbose failed."
+    echo "Expected $NUM_TESTS tests, was $NUM_EXECUTED"
+    exit_failing
+fi
+$BINARY -a > /dev/null 2>&1
+if test "$?" -ne "1"; then
+    echo "Exit value from $BINARY -a with failing tests was not 1".
+    exit_failing
+fi
+echo OK.
+
+echo
+echo "Testing '-h' and '--help'"
+echo "Checking for token 'Usage'..."
+$BINARY -h | grep 'Usage' 1>/dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo "$BINARY -h failed."
+    exit_failing
+fi
+$BINARY --help | grep 'Usage' 1>/dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo "$BINARY -h failed."
+    exit_failing
+fi
+echo OK.
+
+echo
+echo "Testing for error format specification..."
+count_failing_tests
+COUNT=`$BINARY -af=MY_ERROR_TOKEN | grep -cP 'MY_ERROR_TOKEN'`
+if test "$COUNT" -ne "$NUM_FAILING_TESTS"; then
+    echo Failed.
+    echo Expected $NUM_FAILING_TESTS occurrences of 'MY_ERROR_TOKEN', was $COUNT
+    exit_failing
+fi
+echo OK.
+
+##
+# TESTS THAT REQUIRE ALL TESTS TO WORK GO HERE
+#
+echo
+echo "Building for all tests OK."
+./build_tests
+
+echo
+echo Testing standard execution with working tests.
+count_working_tests
+DOT_PATTERN="^\.{$NUM_TESTS} Time: \d+\.\d+ OK \($NUM_TESTS tests\)$"
+echo Matching against $DOT_PATTERN
+TMP=`$BINARY` 
+verify_execution
+echo $TMP | grep -P "${DOT_PATTERN}" > /dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo Failed.
+    exit_failing
+fi
+echo OK.
+
+echo
+echo Testing version information
+VERSION_TAG="CPUnit version ${VERSION}."
+echo "Matching against $VERSION_TAG"
+VERSION_INFO=`$BINARY -V | head -1`
+verify_execution
+if test "$VERSION_INFO" != "$VERSION_TAG"; then
+    echo Wrong version tag:
+    echo "Expected: <"$VERSION_TAG">, was <"$VERSION_INFO">."
+    exit_failing
+fi
+$BINARY -V > /dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo "Exit value from $BINARY -V was not 0".
+    exit_failing
+fi
+echo OK.
+
+echo
+echo Testing multiple execution groups
+TESTS_A='*mult*'
+TESTS_B='*wild*'
+COUNT=`$BINARY -L | grep -cE $TESTS_A`
+let COUNT="$COUNT+`$BINARY -L | grep -cE $TESTS_B`"
+DOT_PATTERN="^\.{$COUNT} Time: \d+\.\d+ OK \($COUNT tests\)$"
+echo Matching against $DOT_PATTERN
+TMP=`$BINARY $TESTS_A $TESTS_B` 
+verify_execution
+echo $TMP | grep -P "${DOT_PATTERN}" > /dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo Failed.
+    echo "Token not found in $TMP"
+    exit_failing
+fi
+$BINARY > /dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo "Exit value from $BINARY with working tests was not 0".
+    exit_failing
+fi
+echo OK.
+
+echo
+echo "Testing with empty test list (NUL string)"
+$BINARY "" > /dev/null 2>&1
+if test "$?" -ne "0"; then
+    echo "Exit value from $BINARY with NUL string was not 0".
+    exit_failing
+fi
+echo OK.
+
+echo
+echo SUCCEEDED!

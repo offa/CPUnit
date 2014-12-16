@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if test "$#" -lt "1"; then
+    echo "Must have version number as parameter."
+    exit 1
+fi
+
+./check_license_headers
+if test "$?" -ne "0"; then
+    echo "Fix license headers first."
+    exit 1
+fi
+
+TARGET="CPUnit_${1}.tar"
+if test -e $TARGET; then
+    echo $TARGET already exists.
+    exit 1
+fi
+
+tar -cf $TARGET doc/*.html doc/*.cpp doc/*.jpg src/*.cpp src/*.hpp src/*.tcc src/cpunit test/*.cpp test/build_tests build_cpunit README.txt
+if test "$?" -ne "0"; then
+   echo "tar failed."
+   exit 1
+fi
+
+gzip -9 $TARGET
