@@ -30,7 +30,7 @@ namespace DoubleExceptionTest2 {
     throw std::runtime_error("error 1");
   }
 
-  // @will_fail
+  // @-disabled-will_fail
   CPUNIT_TEST(DoubleExceptionTest2, foo2) {
     // do nothing...
   }
