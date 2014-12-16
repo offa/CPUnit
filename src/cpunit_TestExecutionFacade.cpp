@@ -120,11 +120,15 @@ cpunit::TestExecutionFacade::execute(std::vector<TestUnit> &tests, const bool ve
     } 
 
     if (verbose) {
-      std::cout<<TimeFormat(res.get_time_spent())<<"s ";
+      std::cout<<"\t"<<TimeFormat(res.get_time_spent())<<"s " << "\t";
     }
-    std::cout<<report_progress(res.get_execution_result())<<std::flush;
+    
     if (verbose) {
+      std::cout << report_progress_str(res.get_execution_result())<<std::flush;
       std::cout<<std::endl;
+    }
+    else {
+      std::cout << report_progress(res.get_execution_result())<<std::flush;
     }
   }
   return result;
@@ -144,6 +148,22 @@ cpunit::TestExecutionFacade::report_progress(const ExecutionReport::ExecutionRes
     throw "Unknown execution result.";
   }
 }
+
+std::string cpunit::TestExecutionFacade::report_progress_str(const ExecutionReport::ExecutionResult r) const
+{
+    switch(r)
+    {
+        case ExecutionReport::OK:
+            return "PASSED";
+        case ExecutionReport::FAILURE:
+            return "FAILED";
+        case ExecutionReport::ERROR:
+            return "ERROR";
+        default:
+            throw "Unknown execution result.";
+    }
+}
+
 
 std::auto_ptr<cpunit::TestRunner>
 cpunit::TestExecutionFacade::get_test_runner(const bool robust, const double max_time) const {

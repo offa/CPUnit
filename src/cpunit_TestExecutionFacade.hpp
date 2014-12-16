@@ -48,6 +48,7 @@ namespace cpunit {
   class TestExecutionFacade {
     std::vector<ExecutionReport> execute(std::vector<TestUnit> &tests, const bool verbose, const TestRunnerFactory &trf);    
     char report_progress(const ExecutionReport::ExecutionResult r) const;
+    std::string report_progress_str(const ExecutionReport::ExecutionResult r) const;
     std::auto_ptr<TestRunner> get_test_runner(const bool robust, const double max_time) const;
   public:
     TestExecutionFacade();
