@@ -47,7 +47,7 @@ cpunit::ExceptionExpectedCall<cpunit::AnyType>::run() {
     (*test)();
     exceptionThrown = false;
   } catch (AssertionException &e) { 
-    throw e;
+    throw;
   } catch (...) {
     CPUNIT_DTRACE("ExceptionExpectedCall::run succeeded");
   }

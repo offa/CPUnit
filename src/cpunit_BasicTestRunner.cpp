@@ -50,7 +50,7 @@ cpunit::BasicTestRunner::run(Callable& tu) const  {
   } catch (AssertionException &e) {
     CPUNIT_DTRACE("BasicTestRunner::run failed.");
     e.set_test(tu.get_reg_info());
-    throw e;
+    throw;
   }
   return ExecutionReport(ExecutionReport::OK, "", tu.get_reg_info());
 }
