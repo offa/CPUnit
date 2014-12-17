@@ -27,16 +27,18 @@ namespace DoubleExceptionTest2 {
 #ifdef SHOW_ERRORS
 
   CPUNIT_SET_UP(DoubleExceptionTest2) {
-    throw std::runtime_error("error 1");
+    // Disabled since this will fail the test
+    //throw std::runtime_error("error 1");
   }
 
-  // @-disabled-will_fail
+  // @will_fail
   CPUNIT_TEST(DoubleExceptionTest2, foo2) {
     // do nothing...
+    throw std::runtime_error("abc");
   }
 
   CPUNIT_TEAR_DOWN(DoubleExceptionTest2) {
-    throw std::runtime_error("error 1");
+    throw std::runtime_error("error 2");
   }
 
 #endif

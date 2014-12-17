@@ -85,7 +85,7 @@ echo
 #
 echo
 echo "Building with tests that fail."
-./build_tests -D SHOW_ERRORS
+./build_tests -DSHOW_ERRORS
 
 echo
 echo Testing "'--list'" and "'-L'"
