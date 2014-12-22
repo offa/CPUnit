@@ -42,6 +42,9 @@ namespace cpunit {
     void start();
     double stop();
     double time() const;
+    
+  private:
+      double now_ms() const;
   };
 
 }

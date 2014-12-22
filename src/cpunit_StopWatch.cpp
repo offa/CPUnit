@@ -36,6 +36,12 @@
 #include <sys/time.h>
 #endif
 
+#ifdef WIN32
+# include <windows.h>
+#elif __linux__ || __unix__
+# include <sys/time.h>
+#endif /* System */
+
 cpunit::StopWatch::StopWatch() :
   duration(.0)
 {}
@@ -67,15 +73,31 @@ cpunit::StopWatch::stop() {
 
 #else // DEFAULT IMPLEMENTATION
 
-void
-cpunit::StopWatch::start() {
-  duration = static_cast<double>(::time(NULL));
+void cpunit::StopWatch::start()
+{
+    duration = now_ms() / 1000.0;
 }
 
-double
-cpunit::StopWatch::stop() {
-  duration = static_cast<double>(::time(NULL)) - duration;
-  return duration;
+double cpunit::StopWatch::stop()
+{
+    duration = ( now_ms() / 1000.0 ) - duration;
+    
+    return duration;
 }
+
+double cpunit::StopWatch::now_ms() const
+{
+#ifdef WIN32
+    return timeGetTime();
+#elif __linux__ || __unix__
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    
+    return ( tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0 );
+#else
+    return static_cast<double>(::time(NULL));
+#endif /* System */
+}
+
 
 #endif 
