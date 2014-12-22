@@ -50,6 +50,8 @@
 namespace cpunit {
 
   namespace {
+      
+      static const std::string CPUNIT_VERSION = "0.97";
   
     using namespace std;
   
@@ -107,8 +109,8 @@ namespace cpunit {
     const std::string max_time_token("--max-time");
 
     void print_version_info() {
-      cout<<"CPUnit version 0.96 (beta)."<<endl;
-      cout<<"Get the latest version at http://cpunit.sourceforge.net/"<<endl;
+      cout<< "CPUnit version " << CPUNIT_VERSION << "." <<endl;
+      cout<< "Get the latest version at https://github.com/offa/CPUnit" << endl;
     }
       
     bool report_result(const std::vector<cpunit::ExecutionReport> &result, const std::string &format, ostream &out) {
