@@ -32,10 +32,6 @@
 #include "cpunit_StopWatch.hpp"
 #include <ctime>
 
-#ifdef _POSIX_TIMERS
-#include <sys/time.h>
-#endif
-
 #ifdef WIN32
 # include <windows.h>
 #elif __linux__ || __unix__
@@ -53,25 +49,6 @@ double
 cpunit::StopWatch::time() const {
   return duration;
 }
-
-#ifdef _POSIX_TIMERS
-
-void
-cpunit::StopWatch::start() {
-  ::timeval tim;
-  ::gettimeofday(&tim, NULL);
-  duration = static_cast<double>(tim.tv_usec/1000000.0);
-}
-
-double
-cpunit::StopWatch::stop() {
-  ::timeval tim;
-  ::gettimeofday(&tim, NULL);
-  duration = static_cast<double>(tim.tv_usec/1000000.0) - duration;
-  return duration;
-}
-
-#else // DEFAULT IMPLEMENTATION
 
 void cpunit::StopWatch::start()
 {
@@ -99,5 +76,3 @@ double cpunit::StopWatch::now_ms() const
 #endif /* System */
 }
 
-
-#endif 
