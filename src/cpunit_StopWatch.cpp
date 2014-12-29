@@ -75,14 +75,14 @@ cpunit::StopWatch::stop() {
 
 void cpunit::StopWatch::start()
 {
-    duration = now_ms() / 1000.0;
+    duration = now_ms();
 }
 
 double cpunit::StopWatch::stop()
 {
-    duration = ( now_ms() / 1000.0 ) - duration;
+    duration = ( now_ms() - duration );
     
-    return duration;
+    return duration / 1000.0;
 }
 
 double cpunit::StopWatch::now_ms() const
@@ -95,7 +95,7 @@ double cpunit::StopWatch::now_ms() const
     
     return ( tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0 );
 #else
-    return static_cast<double>(::time(NULL));
+    return static_cast<double>(::time(NULL) * 1000.0);
 #endif /* System */
 }
 
